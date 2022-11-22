@@ -577,7 +577,7 @@
 > select * from [User]
 > ```
 
-# 主键策略
+## 主键策略
 
 > identity：自增适用于数字类型
 >
@@ -618,7 +618,215 @@
 >
 > ☆：适用于并发量小的时候
 
+## 联级删除与联级更新
 
+> 当两个数据表通过`主、外键`进行关联的时候，无法直接使用`delete`或`update`进行删除与更新操作，需将关联表中的相应的数据删除后才能删除被关联表或表中数据
+>
+> 联级删除需要用到：on delete cascade
+>
+> 联级更新需要用到：on update cascade
+>
+> ```sql
+> -- 表的约束情况
+> -- 创建一个表
+> create table [Type]
+> (
+> 	id int primary key,
+> 	[name] varchar(20) not null
+> )
+> 
+> -- 创建另一个表关联上面的表
+> -- on delete cascade用于关联删除
+> -- on update cascade用于关联更新
+> create table [Product]
+> (
+> 	id int primary key,
+> 	[namr] varchar(20) not null,
+> 	[typeId] int foreign key references [Type](id) on delete cascade on update cascade
+> )
+> 
+> ----------------------------------
+> -- 插入数据
+> insert into [Type] values(1,'书籍'),(2,'电器'),(3,'生活品'),(4,'酱料')
+> 
+> insert into [Product] 
+> values(1,'程序员的自我修养',1),
+> (2,'小米电视机',2),
+> (3,'纸巾',3),
+> (4,'海天蚝油',4),
+> (5,'数据库从入门到入坟',1)
+> 
+> -----------------------------------
+> -- 对[type]表进行数据更新
+> -- 则[Product]表中的数据也会更新
+> update [Type]
+> set id = 5
+> where [name]='书籍'
+> go
+> 
+> -- 删除[Type]表中的行数据后
+> -- [product]中对应数据也会删除
+> delete [Type] where id=2
+> ```
 
+# 查询数据
 
+> 先创建库与表以及插入一堆数据进而进行操作
+>
+> +++
+>
+> 建库、表
+>
+> ```sql
+> -- 创建数据库
+> create database Student;
+> go 
+> 
+> -- 使用数据库/切换数据库
+> use Student;
+> go
+> 
+> -- 创建班级表
+> Create table ClassInfo
+> (
+> 	id int primary key identity,
+> 	[name] varchar(30) not null,
+> 	college varchar(20) not null
+> )
+> go
+> 
+> -- 创建学生表
+> Create table StudentInfo
+> (
+> 	stuId char(10) primary key,
+> 	stuName varchar(20) not null,
+> 	classId int foreign key references ClassInfo(id) on delete cascade on update cascade not null,
+> 	stuPhone char(11) not null,
+> 	stuSex char(2) check(stuSex in ('男','女')),
+> 	stuBirthday dateTime not null
+> )
+> go
+> 
+> -- 成绩表
+> create table StudentScore
+> (
+> 	id int primary key identity,
+> 	stuId char(10) foreign key references StudentInfo(stuId) on delete cascade on update cascade not null,
+> 	courseName varchar(20) not null,
+> 	theoryScore int not null,
+> 	skillScore int not null
+> )
+> go
+> ```
+>
+> +++
+>
+> 插入数据
+>
+> ```sql
+> -- 切换数据库
+> use Student
+> go 
+> 
+> -- 向[ClassInfo]表插入数据
+> Insert into 
+> 	ClassInfo
+> values
+> 	('软件技术1班', '计算机系'),
+> 	('会计1班', '经济管理系'),
+> 	('会计2班', '经济管理系'),
+> 	('欧美软件外包班', '计算机系'),
+> 	('会计3班', '经济管理系')
+> go
+> 
+> -- 向[StudentInfo]表中插入数据
+> insert into 
+> 	StudentInfo
+> values
+> 	('180325011', '任天堂', 1, '12345678902', '男', '1999-09-09'),
+> 	('180325012', '张三', 2, '12345678902', '女', '1998-08-09'),
+> 	('180325013', '李四', 3, '12345678902', '男', '1997-07-09'),
+> 	('180325014', '王五', 4, '12345678902', '女', '1996-06-09'),
+> 	('180325015', '赵六', 5, '12345678902', '男', '1995-05-09'),
+> 	('180325016', '张学友', 5, '12345678902', '女', '1994-04-09'),
+> 	('180325017', '郭富城', 4, '12345678902', '男', '1993-03-09'),
+> 	('180325018', '刘德华', 3, '12345678902', '女', '1992-02-09'),
+> 	('180325019', '黎明', 2, '12345678902', '男', '1991-01-09'),
+> 	('180325020', '谭咏麟', 1, '12345678902', '女', '1990-10-09'),
+> 	('180325021', '林子祥', 1, '12345678902', '男', '1989-11-09'),
+> 	('180325022', '周慧敏', 2, '12345678902', '男', '1999-12-09')
+> go
+> 
+> -- 向[StudentScore]表中插入数据
+> Insert into
+> 	StudentScore
+> values
+> 	('180325011', 'C# 入门到入坟', 80, 90),
+> 	('180325012', '会计从业', 90, 88),
+> 	('180325013', '会计从业', 100, 90),
+> 	('180325014', '计算机基础', 70, 60),
+> 	('180325015', '会计从业', 60, 90),
+> 	('180325016', '会计从业',50, 90),
+> 	('180325017', '计算机基础', 40, 100),
+> 	('180325018', '会计从业', 100, 100),
+> 	('180325019', '会计从业', 80, 90),
+> 	('180325020', 'C# 入门到入坟', 100, 100),
+> 	('180325021', 'C# 入门到入坟', 80, 90),
+> 	('180325022', '会计从业',100, 90)
+> go
+> ```
 
+## 简单查询
+
+> 查询某表中的所有数据
+>
+> ```sql
+> -- StudentInfo
+> -- *表示所有，优化的时候一般不用*
+> SELECT * from StudentInfo
+> ```
+>
+> +++
+>
+> 查询表中指定的字段
+>
+> ```sql
+> -- 查询[StudentInfo]表中的姓名、性别、生日、班级
+> select 
+> 	stuName,stuSex,stuBirthday,classId
+> from
+> 	StudentInfo
+> ```
+>
+> +++
+>
+> 为表中的列取别名
+>
+> ```sql
+> -- 查询[StudentInfo]表中的信息并为每一列取别名
+> -- as:可省略
+> select 
+> 	stuId as '学生主键',
+> 	stuName as '学生姓名',
+> 	classId as 班级编号,
+> 	stuPhone '电话',
+> 	stuSex 性别,
+> 	stuBirthday '生日'
+> from
+> 	StudentInfo
+> ```
+>
+> +++
+>
+> `distinct`：去重
+>
+> ```sql
+> -- 1、指定单个字段去除重复项
+> select distinct classId from StudentInfo
+> 
+> -- 2、指定多个字段时
+> -- 系统将多个字段组合在一起时，不会发生重复
+> select distinct stuSex,classId from StudentInfo
+> ```
+>
+> 
