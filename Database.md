@@ -829,4 +829,281 @@
 > select distinct stuSex,classId from StudentInfo
 > ```
 >
+> +++
+>
+> `top`：取前几条数据
+>
+> ```sql
+> -- 1、取前5条数据
+> select 
+> 	top 5 *
+> from 
+> 	StudentInfo
+> go
+> 
+> -- 2、取前百分之70的数据
+> select 
+> 	top 70 percent *
+> from
+> 	StudentInfo
+> ```
+>
+> ☆：top取的数据数量采取`向上取整`的方式
+>
+> +++
+>
+> `where`：查询条件
+>
+> ```sql
+> -- 查询年龄大于30岁的学生
+> select 
+> 	*
+> from 
+> 	StudentInfo
+> where
+> 	(YEAR(GETDATE())-YEAR(stuBirthday)) > 25
+> go
+> 
+> -- 查询学生的姓名、性别、年龄(取别名)
+> select
+> 	stuName as '姓名',
+> 	stuSex as '性别',
+> 	(Year(getdate())-Year(stuBirthday)) as 年龄
+> from
+> 	StudentInfo
+> go
+> 
+> -- 查询90后的女生
+> select
+> 	*
+> from
+> 	StudentInfo
+> where
+> 	YEAR(stuBirthday) >= 1990 and
+> 	YEAR(stuBirthday) <= 1999 and
+> 	stuSex = '女'
+> go
+> ```
+>
+> ☆：YEAR()：从参数里面截取年份
+>
+> ☆：GETDATE()：获取当前时间
+>
+> ☆：当要求多个条件时需要用and连接
+>
+> +++
+>
+> `like`：模糊查询
+>
+> ```sql
+> -- 查询姓李的学生
+> select 
+> 	*
+> from
+> 	StudentInfo
+> where
+> 	stuName LIKE '李%'
+> go
+> 
+> -- 查询名字含 富 的学生
+> select
+> 	*
+> from
+> 	StudentInfo
+> where
+> 	stuName like '%富%'
+> ```
+>
+> ☆：`%` 表示任意**多个**字符
+>
+> ☆：`_` 表示任意**一个**字符
+>
+> ☆：[`charlist`] 表示中括号内的字符列表中的任意**一个**字符
+>
+> ☆：[`!charlist`] 表示不含中括号内的字符列表中的任意**一个**字符
+>
+> ☆：[`^charlist`] 表示不含中括号内的字符列表中的任意**一个**字符
+
+## ORDER BY
+
+> Order by：排序。默认情况下是升序
+>
+> ASC：升序。
+>
+> DESC：降序
+>
+> ```sql
+> -- 单字段排序：Order by(字段名) asc/desc
+> -- 将成绩从高到低排序
+> Select
+> 	*
+> from 
+> 	StudentScore 
+> Order BY(skillScore + theoryScore) desc
+> go
+> 
+> -- 将姓名升序【A~Z的顺序】
+> Select
+> 	*
+> from
+> 	StudentInfo
+> order by(stuName) asc
+> go
+> 
+> -----------------------------------------
+> -- 多字段排序：Order by(字段名) asc/desc, (字段名) asc/desc[……]
+> -- 查询成绩表，先ID进行排序再按成绩降序
+> Select
+> 	*
+> from
+> 	StudentScore
+> Order by(stuId) asc,(skillScore+theoryScore) desc
+> go
+> 
+> -- 查询学生信息，先班级排序再按生日降序
+> select
+> 	*
+> from
+> 	StudentInfo
+> Order by
+> 	(classId) asc,
+> 	(Year(GETDATE()) - Year(stuBirthday)) desc
+> go
+> ```
+
+## In/Between ……and
+
+> in：指定的值。固定
+>
+> between……and：在某个范围内。范围
+>
+> ```sql
+> -- In
+> -- 查询班级（1、3、5）的学生信息
+> select 
+> 	*
+> from
+> 	StudentInfo
+> where 
+> 	classId in (1,3,5)
+> go
+> 
+> -- between and
+> -- 查询理论成绩在40~80的学生
+> select
+> 	*
+> from
+> 	StudentScore
+> where
+> 	theoryScore between 40 and 80
+> go
+> ```
+
+## 聚合查询
+
+> 聚合函数
+>
+> + MIN()：最小值。数字类型
+> + MAX()：最大值。数字类型
+> + SUM()：求总和。数字类型
+> + COUNT()：求个数。无要求
+> + COUNT(distinct 字段)：去重后求个数
+> + AVG()：求平均数。数字类型
+>
+> ```sql
+> -- 统计学生的个数
+> Select
+> 	count(stuId)
+> from
+> 	StudentInfo
+> go
+> 
+> -- 统计女生的个数
+> select
+> 	COUNT(stuId)
+> from
+> 	StudentInfo
+> where
+> 	stuSex = '女'
+> go
+> 
+> -- 查询学生的平均分
+> select
+> 	AVG(theoryScore+skillScore)
+> from
+> 	StudentScore
+> go
+> 
+> -- 查询学生会计从业的平均分
+> select
+> 	AVG(theoryScore+skillScore)
+> from
+> 	StudentScore
+> where
+> 	courseName = '会计从业'
+> go
+> 
+> -- 求编号最大的班级
+> select
+> 	MAX(id)
+> from
+> 	ClassInfo
+> go
+> 
+> -- 计算最低分
+> select
+> 	Min(theoryScore+skillScore)
+> from
+> 	StudentScore
+> go
+> 
+> -- 查询技能的总分
+> select
+> 	SUM(skillScore)
+> from
+> 	StudentScore
+> go
+> 
+> -- 查询有多少个人参加了考试
+> Select 
+> 	COUNT(distinct stuId)
+> FROM
+> 	StudentScore
+> ```
+
+## EXISTS查询
+
+> 用于嵌套查询
+>
+> `exists`后的查询语句有结果则为**真**，无结果则为**假**
+>
+> 当为**真**时，执行外层查询，否则外层查询不执行
+>
+> ```sql
+> select
+> 	字段1,字段2……
+> from
+> 	表名
+> where
+> 	exists(select 字段 from 表名 where ……)
+> 	
+> -----------------------------------------------
+> -- 查询学生表，大于25岁，且为女性
+> select 
+> 	*
+> from 
+> 	StudentInfo
+> where
+> 	exists(
+> 		select 
+> 			* 
+> 		from 
+> 			StudentInfo 
+> 		where
+> 			YEAR(GETDATE()-Year(stuBirthday)) > 25
+> 		) and
+> 	stuSex = '女'
+> go
+> ```
+>
 > 
