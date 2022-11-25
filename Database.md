@@ -1106,4 +1106,100 @@
 > go
 > ```
 >
+
+## 分组查询
+
+> 关键词：group by
+>
+> 分组查询必有聚合函数
+>
+> ```sql
+> -- select 
+> --     要分组的字段，聚合函数
+> -- from
+> --     表名
+> -- group by 要分组的字段
+> ------------------------------------
+> -- 计算每门课程的平均分
+> select
+> 	courseName,
+> 	AVG(skillScore) as '技能平均分'
+> from
+> 	StudentScore
+> group by
+> 	courseName
+> go
 > 
+> -- 每个学生的平均分
+> select
+> 	stuId,
+> 	AVG(skillScore) as '技能平均分'
+> from
+> 	StudentScore
+> group by
+> 	stuId
+> go
+> 
+> -- 每个班有多少个学生
+> select
+> 	classId,
+> 	Count(stuId) as '学生数量'
+> from
+> 	StudentInfo
+> group by
+> 	classId
+> go
+> 
+> -- 每门课程有多少位同学在学习
+> select
+> 	courseName,
+> 	COUNT(stuId) as '学生数量'
+> from
+> 	StudentScore
+> group by
+> 	courseName
+> go
+> 
+> -- 统计每个学生学了多少门课程
+> select
+> 	stuId,
+> 	COUNT(courseName) as '课程'
+> from
+> 	StudentScore
+> group by
+> 	stuId
+> go
+> 
+> -- 计算每一门课程的平均分、总分、最高分、最低分
+> select
+> 	courseName,
+> 	AVG(theoryScore+skillScore) as '平局分',
+> 	SUM(theoryScore+skillScore) as '总分',
+> 	MAX(theoryScore+skillScore) as '最高分',
+> 	MIn(theoryScore+skillScore) as '最低分'
+> from
+> 	StudentScore
+> group by
+> 	courseName
+> go
+> ---------------------------------------------
+> -- having : 用于 group by 的过滤
+> -- 与where不同的地方时，having在分组后进行过滤
+> -- 统计每门课程的最低分，并查询成绩大于70以上的
+> select
+> 	courseName,
+> 	MIn(theoryScore+skillScore) as '最低分'
+> from
+> 	StudentScore
+> group by
+> 	courseName
+> having 
+> 	min(theoryScore+skillScore)>150
+> go
+> 
+> ```
+>
+> ☆：group by 有几个字段，select后就跟几个字段
+
+## 嵌套查询
+
