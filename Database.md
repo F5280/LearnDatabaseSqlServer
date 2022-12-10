@@ -1288,3 +1288,101 @@
 
 ## 连接查询
 
+> 创建数据库与数据表
+>
+> ```sql
+> CREATE DATABASE Enterprise
+> ON  PRIMARY 
+> ( 
+> 	NAME = 'enterprise', 
+> 	FILENAME = 'E:\DataBases\Enterprise.mdf', 
+> 	SIZE = 8192KB , 
+> 	MAXSIZE = UNLIMITED, 
+> 	FILEGROWTH = 65536KB 
+> )
+> LOG ON 
+> ( 
+> 	NAME = 'Enterprise_log', 
+> 	FILENAME = 'E:\DataBases\Enterprise_log.ldf', 
+> 	SIZE = 8192KB , 
+> 	MAXSIZE = 2048GB , 
+> 	FILEGROWTH = 65536KB 
+> )
+> GO
+> -----------------------------------------
+> use Enterprise
+> go
+> 
+> -- 创建部门表
+> create table Dept
+> (
+> 	id int primary key identity,
+> 	deptName varchar(50) not null unique
+> )
+> 
+> -- 创建员工表
+> create table Staff
+> (
+> 	id int primary key identity,
+> 	staffName varchar(50) not null unique,
+> 	sex char(4) not null default '男',
+> 	age tinyint not null default 18,
+> 	salary decimal(10,2) not null default 10,
+> 	deptId int not null foreign key references Dept(id)
+> )
+> ```
+>
+> ---
+>
+> 插入数据
+>
+> ```sql
+> use Enterprise
+> go
+> 
+> insert into Dept
+> values('开发部'),('测试部'),('市场部'),('销售部'),('财务部')
+> go
+> 
+> insert into Staff
+> values
+> 	('林子祥','男',76,15000,1),
+> 	('谭咏麟','男',50,12500,3),
+> 	('张国荣','男',23,10000,2),
+> 	('陈惠敏','女',18,7500,4),
+> 	('杨千嬅','女',22,5000,1),
+> 	('叶倩文','女',24,2500,3),
+> 	('张学友','男',48,5000,2),
+> 	('黎明','男',44,7500,4),
+> 	('郭富城','男',36,10000,1),
+> 	('刘德华','男',25,12500,2)
+> ```
+
+### 内连接
+
+> 把匹配上的数据显示出来，匹配不上的则无法显示
+>
+> join……on 与 inner join……on 效果一样
+>
+> ```sql
+> use Enterprise
+> go 
+> 
+> -- 查询部门编号、部门名称
+> select id,deptName from Dept
+> go
+> 
+> -- 查询员工姓名、薪资
+> select staffName, salary
+> from Staff
+> go
+> 
+> -- 查询员工姓名、薪资，所在部门(内连接)
+> select 
+> 	Staff.staffName, Staff.salary , Dept.deptName
+> from 
+> 	Staff inner join Dept on Staff.deptId=Dept.id
+> go
+> ```
+>
+> ☆：可以为表取别名便于查询语句的编写
