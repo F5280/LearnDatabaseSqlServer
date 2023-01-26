@@ -1472,7 +1472,68 @@
 > 
 > ```sql
 >
+> use Student
+> go 
+>
+> -- Query each student to find other optional classes besides their own class.
+> -- 查询每位同学除了自己所属的班级外查询出其余可选的班级
+> select
+> 	S.stuId, S.stuName, S.stuSex, C.[name], C.college
+> FROM 
+> 	StudentInfo as S inner join ClassInfo as C
+> 	on S.classId!=C.id
+> go
 > 
+> -- Query the scores of other students.
+> -- 查询其他同学的成绩
+> SELECT 
+> 	*
+> FROM 
+> 	StudentInfo as SI inner join StudentScore as SS
+> 	on SI.stuId!=SS.stuId
 >  
 > ```
 >
+
+### 自连接
+
+> 
+> SELECT * FROM 表1 [inner] join 表2 on 表1主键=表2外键
+> 
+> ※：表1 和 表2 是同一张表
+> 
+
+```sql
+
+-- create data table
+Create table Menu
+(
+    id int primary key identity,
+    [name] varchar(20), -- 菜单名称
+    parentId int  -- 上级菜单
+)
+go
+
+-- insert data to table
+insert into Menu
+values('商品管理', 0), ('系统管理', 0), ('订单管理', 0);
+
+insert into Menu
+values('商品列表', 1), ('商品分类', 1), ('发布商品', 1);
+
+insert into Menu
+values('权限管理', 2), ('用户管理', 2), ('角色管理', 2);
+
+insert into Menu
+values('订单列表', 3), ('运费模板', 3), ('物流跟踪', 3);
+
+-- Query all menu information and its parent menu name.
+-- 查询所有菜单信息以及他的上级菜单名称
+SELECT * 
+FROM 
+    Menu M1 inner join Menu M2 
+    on M1.id=M2.parentId
+go
+
+```
+
