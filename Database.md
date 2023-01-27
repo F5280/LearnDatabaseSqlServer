@@ -1537,3 +1537,127 @@ go
 
 ```
 
+### 外连接
+
+外连接是以一张表为基表，返回表中所有记录及连接表中符合条件的记录的连接查询
+
+#### 左外连接(左连接)
+
+以左表为基表，返回左表中所有记录及连接表中符合条件的记录的外连接
+
++ 以左表为基表
++ 返回左表中所有数据
++ 连接表不符合条件以 `NULL` 填充
+
+``` sql
+
+-- 左外连接符号：left outer join
+
+-- Query all student information and corresponding class information (student number, student name, class number and class name are required to be displayed)
+-- 查询所有学生信息以及对应的班级信息（要求显示学生编号、学生姓名、班级编号、班级名称）
+SELECT 
+    *
+FROM
+    StudentInfo as S
+    left outer join
+    ClassInfo C
+    on S.classId=C.id
+go
+
+```
+#### 右外连接(右连接)
+
+以右表为基表，返回右表中所有记录及连接表中符合条件的记录的外连接
+
++ 以右表为基表
++ 返回右表中所有数据
++ 连接表不符合条件以 `NULL` 填充
+
+``` sql
+
+-- 右外连接符号：right outer join
+
+-- Query all class information and corresponding student information (required to display student number, student name, class number, class name)
+-- 查询所有班级信息以及对应的学生信息（要求显示学生编号、学生姓名、班级编号、班级名称）
+SELECT 
+    *
+FROM
+    StudentInfo as S
+    right outer join
+    ClassInfo C
+    on S.classId=C.id
+go
+
+```
+
+#### 全外连接
+
+分别以左右表为基表的外连接
+
++ 将左表和右表的所有记录都显示
++ 连接表中不符合条件以 `NULL` 填充
+
+``` SQL
+
+-- Query all student information and all class information (it is required to display student number, student name, class number, class name, department name).
+-- 查询所有学生信息以及所有班级信息（要求显示学生编号、学生姓名、班级编号、班级名称、院系名称）
+SELECT 
+    *
+FROM
+    StudentInfo as S
+    FULL outer JOIN
+    ClassInfo as C
+    on S.classId=C.id
+go
+
+```
+
+### UNION(联合查询)
+
+``` SQL
+
+CREATE TABLE Course1
+(
+    id int primary key,
+    [name] varchar(20)
+)
+GO
+
+CREATE TABLE Course2
+(
+    id int primary key,
+    [name] varchar(20)
+)
+
+insert into Course1
+Values(1, 'C#'), (2, 'SQL'), (3, '.net6'), (4, 'MySql')
+
+insert into Course1
+Values(1, 'java'), (2, 'PHP'), (3, 'Linux'), (4, 'Docker')
+
+```
+
++ UNION 去重且排序
++ UNION ALL 不去重不排序
+
+``` SQL
+
+SELECT * FROM Course1
+union all
+SELECT * FROM Course2
+go
+
+SELECT * from Course1
+union
+select * from Course2
+go
+
+```
+
+※：union 或者 union all 左右两边的查询列数要一样
+
+# End
+
+`SQL Server` 的基础知识笔记已完成，后续不定期进行补充高级的内容。
+
+> The basic knowledge notes of `SQL Server` have been completed, and advanced content will be supplemented from time to time.
