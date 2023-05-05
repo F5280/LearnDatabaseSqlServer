@@ -14,7 +14,7 @@
 > 
 > + 数据结构：是计算机存储、组织数据的方式
 >   
->   ---
+>  ---
 >   
 >   组成不同
 > 
@@ -22,7 +22,7 @@
 > 
 > + 数据结构：是指相互之间存在一种或多种特定关系的数据元素的集合
 >   
->   ---
+>  ---
 >   
 >   特点不同
 > 
@@ -1661,3 +1661,9 @@ go
 `SQL Server` 的基础知识笔记已完成，后续不定期进行补充高级的内容。
 
 > The basic knowledge notes of `SQL Server` have been completed, and advanced content will be supplemented from time to time.
+
+如果感觉这篇文档对你学习数据库起到帮助，不妨给作者点个星，让更多的人学到知识，也可以给作者一点鼓励。
+
+> If you feel that this document is helpful for you to learn about databases, you can give the author a star to help more people learn knowledge, and also give the author some encouragement.
+
+<img src="../Images/zhifubao.jpg" alt="支付宝" style="zoom:30%;" /><img src="../Images/wechat.jpg" alt="微信" style="zoom:30%;" />

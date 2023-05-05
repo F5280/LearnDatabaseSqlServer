@@ -4,13 +4,16 @@
 
 本次数据库的高级内容笔记我准备用双语（中文、英文）进行记录，英文部分使用的是百度翻译。
 
+对于本文档适合具有数据库基础的同志。
+
 `SQL server` 高级内容涉及了索引、事务、锁、T-SQL编程、触发器、存储过程、数据库设计、临时表、数据库优化、发布等。
 
+>I am going to record the high-level content notes of this database in bilingual (Chinese and English), and the English part is Baidu Translator.
 >
-> I am going to record the high-level content notes of this database in bilingual (Chinese and English), and the English part is Baidu Translator.
-> 
-> The advanced content of `SQL server` involves indexes, transactions, locks, T-SQL programming, triggers, stored procedures, database design, temporary tables, database optimization, publishing, etc.
-> 
+>This document is suitable for comrades with a database foundation.
+>
+>The advanced content of `SQL server` involves indexes, transactions, locks, T-SQL programming, triggers, stored procedures, database design, temporary tables, database optimization, publishing, etc.
+>
 
 ## 1. Index and view(索引与视图)
 
@@ -528,7 +531,7 @@ end catch
 
 `READ COMMITTED SNAPSHOT` 隔离级别在逻辑上与 `READ COMMITTED` 类似
 
-不过在快照隔离级别下读操作不需要申请获得共享锁，所以即便是数据已经存在排他锁也不影响读操作。而且仍然可以得到和``SERIALIZABLE` 与 `READ COMMITTED` 隔离级别类似的一致性;如果目前版本与预期的版本不一致，读操作可以从 `TEMPDB` 中获取预期的版本。
+不过在快照隔离级别下读操作不需要申请获得共享锁，所以即便是数据已经存在排他锁也不影响读操作。而且仍然可以得到和`SERIALIZABLE` 与 `READ COMMITTED` 隔离级别类似的一致性;如果目前版本与预期的版本不一致，读操作可以从 `TEMPDB` 中获取预期的版本。
 
 如果启用任何一种基于快照的隔离级别，DELETE和UPDATE语句在做出修改前都会把行的当前版本复制到 `TEMPDB` 中，而INSERT语句不需要在 `TEMPDB` 中进行版本控制，因为此时还没有行的旧数据
 
@@ -827,3 +830,1005 @@ SET IDENTITY_INSERT [dbo].[staff] OFF
 **局部变量**
 
 > ☆：定义局部变量必须以 `@` 符号开头
+>
+> ☆：只能在当前的会话下使用
+>
+> 关键字：declare
+
+```sql
+-- 语法
+declare @变量名 变量类型=值;
+
+-- 例
+declare @name varchar(20)='刘德华';
+
+-- 赋值方式
+set @name='张学友';
+select @name='郭富城';
+
+-- 查询方式
+print @name;	-- 以消息的形式打印出来
+select @name as '姓名';	-- 以表格的形式打印
+
+-- 使用方式
+declare @age int;	-- 声明变量
+Select @age=Age from Person where [Name]='王佳佳';
+select @age as 年龄
+go
+```
+
+### 5.3 选择结构
+
+**if 结构**
+
+```sql
+-- if(条件)
+-- begin	语句块的开始关键词
+	-- 语句块
+-- end		语句块的结束关键词
+
+-- 例
+declare @age int;	-- 声明变量
+select @age=Age from Person where [Name]='王佳佳';	-- 赋值
+if(@age between 1 and 10)
+begin
+	print '儿童'
+end
+else if(10<@age and @age<18)
+begin
+	print '少年'
+end
+else if(@age between 18 and 29)
+begin
+	print '青年'
+end
+else if(@age between 30 and 50)
+begin
+	print '中年'
+end
+else if(@age>50)
+begin
+	print '老年'
+end 
+```
+
+> ☆ 当 Begin……end 只有一个语句时可以省略
+>
+> ☆ Begin……end 相当于一对花括号`{}`
+
+**case 结构**
+
+```sql
+-- 判断字段与条件是否相等
+-- case field
+--     when condition1 then result1
+--     when condition2 then result2
+--     when condition3 then result3
+-- 	   ……
+--     else result
+-- end
+
+-- or
+
+-- case
+--     when condition1 then result1
+--     when condition2 then result2
+--     when condition3 then result3
+-- 	   ……
+--     else result
+-- end
+```
+
+```sql
+-- 例：收入阶段的判断
+Select 
+	*,
+	case 
+		when Salary.sal < 3000 then '低收入'
+		when Salary.sal between 3000 and 10000 then '中收入'
+		when Salary.sal between 10001 and 50000 then '高收入'
+		else '富可敌国'
+	end as '收入阶段'
+from 
+	Salary
+```
+
+### 5.4 循环结构
+
+```sql
+-- while 循环
+-- whiel (condition)
+-- begin
+-- 		语句块
+-- end
+```
+
+```sql
+-- 例：求1~100的和，碰到3的倍数则跳过
+declare @i int = 1;	-- 声明变量 i
+declare @sum int = 0;	-- 声明求和变量
+
+while(@i <= 100)	-- 判断是否进入循环
+begin	-- 开始循环
+	if(@i % 3 = 0)	-- 判断是否是3的倍数
+	begin	-- 判断开始
+		set @i= @i + 1;	-- 为条件变量自增
+		continue;	-- 结束当前循环伦次进入下一轮
+	end	-- 判断结束
+
+	set @sum += @i;	-- 求和
+	set @i += 1;	-- 自增变量i
+end	-- 结束循环
+
+Select @sum;	--
+print @sum;
+```
+
+`return` 直接退出循环
+
+`break` 结束当前循环
+
+`continue` 结束循环中当前的轮次进入下一轮循环
+
+### 5.5 waitfor 控制
+
+等待特定的时间再执行语句
+
+```sql
+-- waitfor delay 时间
+
+print 'Hello';
+waitfor delay '0:0:5';	-- 等待5秒
+print 'World'
+```
+
+### 5.6 函数
+
+#### 5.6.1 系统函数
+
+```sql
+-- cast(expression AS data_type) 强制类型转换
+select cast('100.1' AS decimal(10, 2))	-- 100.10
+
+-- Left(character string, num) 从左边计数，返回指定数量的字符
+SELECT Left('Hello World', 7)	-- Hello W
+
+-- Right(character string, num) 从右边计数，返回指定数量的字符
+SELECT Right('Hello World', 7)	-- o World
+
+-- LTrim(character string) 去除字符串左边的空格符号
+Select LTrim('Hello World     ')	-- Hello World
+
+-- RTrim(character string) 去除字符串右边的空格符号
+select RTrim('     Hello World')	-- Hello World
+
+-- str(value) 将数值数据转换成字符数据
+Select str(123)	-- 123
+
+-- SubString(character string, index, num) 按指定索引截取指定数量字符
+-- 索引从 1 开始
+SubString('Hello World', 2, 5)	-- ello
+
+-- Lower(character string) 将字符串中的所有字符转成小写字符
+-- Upper(character string) 将字符串中的所有字符转成大写字符
+
+-- Concat(character string1, character string2, ……) 拼接字符串
+print Concat('Hello', ' ', 'world', '!')	-- hello world!
+
+-- Len(character string) 计算字符串中的字符个数
+print Len('Hello World!')	-- 12
+
+-- Replace(character string, source string, target string)
+print Replace('Hello World!', '!', '?')	-- hello world?
+
+-- abs(value) 求绝对值
+-- Sqrt(value) 求算术平方根
+-- round(value, significant digits) 四舍五入函数
+-- Rand() 随机返回 0~1 之间的浮点小数
+-- GetDate() 获取当前数据库系统的日期和时间
+-- Year(date) 获取指定日期的年份
+-- Month(date) 获取指定日期的月份
+-- Day(date) 获取指定日期的日
+
+-- DateDiff(date_part, star_date, end_date) 计算两个日期相差天数
+print DateDiff(Year, '1999-01-01', getdate())	-- 年份差距
+print DateDiff(Month, '1999-01-01', getdate())	-- 月份差距
+print DateDiff(day, '1999-01-01', getdate())	-- 天数差距
+print DateDiff(hour, '1999-01-01', getdate())	-- 小时差距
+print DateDiff(minute, '1999-01-01', getdate())	-- 分钟差距
+print DateDiff(second, '1999-01-01', getdate())	-- 秒数差距
+
+-- DateAdd(date_part, number, date) 根据日期类型对日期进行增量
+print dateadd(Year, 5, '1999-01-01') -- 01  1 2004 12:00AM
+```
+
+
+
+#### 5.6.2 自定义函数
+
+`sql server` 自定义函数分为三种类型：`标量函数(Scalar Function)`、`内嵌表值函数(Inline Function)`、`多声明表值函数(Multi-Statement Function)`
+
+`标量函数` 标量函数是对单一值操作，返回单一值。
+
+`内嵌表值函数` 内嵌表值函数的功能相当于一个参数化的视图。它返回的是一个表，内联表值型函数没有由BEGIN-END语括起来的函数体。
+
+`多声明表值函数` 它的返回值是一个表，但它和标量型函数一样有一个用BEGIN-END 语句括起来的函数体，返回值的表中的数据是由函数体中的语句插入的。
+
+```sql
+-- 定义一个标量函数，计算 1~n 的和
+-- 定义函数
+Create function f_sum(@end int) returns int
+begin
+	declare @i int = 1;
+	declare @sum int = 0;
+	while (@i < @end)
+	begin
+		set @sum += @i;
+		set @i += 1;
+	end
+	return @sum;
+end
+go
+
+-- 使用函数
+print dbo.f_sum(100)	-- 4950
+go
+
+-- 修改函数: 计算 1~n 之间的偶数和
+Alter function f_sum(@end int) returns int
+begin
+	declare @i int = 1;
+	declare @sum int = 0;
+
+	while (@i < @end)
+	begin
+
+		if (@i % 2 = 0)
+		begin
+			set @sum += @i;
+			set @i += 1;
+		end
+
+		set @i += 1;
+	end
+
+	return @sum;
+end
+go
+
+-- 删除函数
+drop function f_sum;
+go
+
+```
+
+>  `dbo` => `database object` 数据库对象
+>
+> 表，索引，视图，事务，触发器，存储过程
+
+## 6. 触发器
+
+触发器为特殊类型的存储过程，可在执行 `SQL` 语句 (`insert`、`update`、`delete`) 时自动执行
+
+```sql
+create database Commodity;	-- 创建数据库
+go
+
+use Commodity;	-- 使用新建数据库
+go
+
+CREATE TABLE Goods	-- 创建商品数据表
+(
+	[Id] int PRIMARY KEY IDENTITY NOT NULL,
+	[Name] nvarchar(50) NOT NULL,
+	[Price] decimal(8,2) NOT NULL,
+	[stock] int NOT NULL,
+	[Enable] bit NOT NULL
+);
+go
+
+CREATE TABLE Orders	-- 创建订单数据表
+(
+	[Id] int PRIMARY KEY IDENTITY NOT NULL,
+	[Totalsum] decimal(8,2) NOT NULL,
+	[orderDate] datetime NOT NULL
+);
+go
+
+CREATE TABLE OrderItems	-- 创建订单列表数据表
+(
+	[Id] int PRIMARY KEY IDENTITY NOT NULL,
+	[orderId] int NOT NULL,
+	[GoodsId] int NOT NULL,
+	[Quantity] int NOT NULL
+);
+go
+
+-- 向 商品数据表 插入数据
+INSERT [Goods] VALUES (N'产品1', CAST(20.05 As decimal(8, 2)), 998, 1)
+INSERT [Goods] VALUES (N'产品2', CAST(10.20 As decimal(8, 2)), 698, 1)
+INSERT [Goods] VALUES (N'产品3', CAST(16.50 As decimal(8, 2)), 597, 1)
+go
+-- 向 订单数据表 插入数据
+INSERT [orderItems] VALUES (1, 1, 1)
+INSERT [orderItems] VALUES (1, 3, 1)
+INSERT [orderItems] VALUES (2, 2, 2)
+INSERT [orderItems] VALUES (2, 3, 2)
+go
+-- 向 订单列表 插入数据
+INSERT [orders] VALUES (CAST(57.10 AS Decimal(8, 2)), CAST(N'2019-06-18 00:00:00.000' AS DateTime))
+INSERT [orders] VALUES (CAST(53.40 AS Decimal(8, 2)), CAST(N'2019-06-18 00:00:00.000' AS DateTime))
+go
+```
+
+### 6.1 触发器分类
+
+1. `After trigger` 事后触发器
+2. `Instead Of` 替换触发器
+
+### 6.2 语法
+
+```sql
+-- 创建触发器
+Create Trigger trigger_name
+ON table_name {After | Instead of}
+{insert | delete | update} AS
+Begin
+	-- 执行语句 后/时 触发的内容
+end
+
+-- 修改触发器
+Alter Trigger trigger_name
+ON table_name {After | Instead of}
+{insert | delete | update} AS
+Begin
+	-- 执行语句 后/时 触发的内容
+end
+
+-- 删除触发器
+drop trigger trigger_name;
+```
+
+```sql
+-- 例
+-- 添加成功后打印提示
+Create trigger tr_goods_insert 
+on Goods after insert AS
+Begin
+	print '添加成功'
+end
+go
+
+-- 替换添加语句，添加数据不成功
+Create trigger tr_goods_insert 
+on Goods instead of insert AS
+Begin
+	print '添加成功?'	
+end
+go
+```
+
+### 6.3 触发器的临时表
+
+触发器有 `inserted` 和 `deleted` 两张临时表
+
+| 操作   | Inserted         | Deleted          |
+| ------ | ---------------- | ---------------- |
+| insert | 存放新增记录     | -                |
+| delete | -                | 存放被删除的记录 |
+| update | 存放修改后的记录 | 存放修改前的记录 |
+
+> 系统在内存中自动创建创建，当触发器完成工作后，这两张表就会被删除
+>
+> 这2张表和触发器修改的表具有完全相同的表结构
+>
+> 两张表的都是只读的
+
+```sql
+-- 添加订单时，产品库存自动减少
+create trigger tr_orderitems_insert on OrderItems after insert as
+begin
+	declare @goodsId int,@quantity int;
+	select @goodsId=GoodsId, @quantity=Quantity from inserted;
+	update Goods set stock-=@quantity where Id = @goodsId
+end
+go
+-- 添加订单
+begin tran;
+	begin try
+	insert into orders values(100,getdate());
+	insert into orderItems values(@@IDENTITY,1,2);
+	commit;
+	end try
+	begin catch
+	rollback;
+	end catch
+go
+
+```
+
+**优点**
+
++ 简化操作,自动执行
++ 用于验证数据完整性和业务规则
+
+**缺点**
+
++ 可移植性差
++ 藏得深不易调试提高了开发成本
+
+## 7. 游标
+
+游标是一种处理数据的方法，它可以对结果集中的记录进行逐行处理。可理解为指针，用于指向并处理结果集任意位置的数据
+
+**特点**
+
++ 从结果集的当前位置检索一条记录或者一部分记录
++ 支持对结果集中当前位置的记录进行数据修复
++ 为由其他用户对显示在结果集中的数据库数据所做的更改提供不同级别的可见性支持
++ 提供脚本、存储过程和触发器中用于访问结果集中的数据的 `T-SQL` 语句
+
+```sql
+-- 语法
+Declare cursor_name cursor
+[Local | Global]
+[Forward_Only | Scroll | Static | Keyset | Dynamic | Fast_forward]
+[Read_only | Scroll_Locks | Optimistic]
+[Type_warning]
+for Select 语句[for update[of column_name [,……]]]
+
+-- Local => 局部    Global => 全局
+-- Forward_only 指游标只能向前滚动
+-- Scroll 指游标可以在任意方向上滚动
+-- Static 指明要为检索到的结果集建立一个临时拷贝
+-- Keyset 指定当游标打开时，游标中行的成员资格和顺序已经固定
+-- Dynamic 定义一个游标以反映在滚动游标时对结果集内的各行所做的所有数据更改
+-- Fast_forward 启动性能优化的 Forward_only、Read_only游标
+-- Optimistic 如果行自从被读入游标以来已得到更新，则通过游标进行的定位更新或定位删除不成功
+```
+
+```sql
+-- 游标操作
+-- 1. 声明游标 declare
+-- 2. 打开游标 Open cursor_name
+-- 3. 提取数据 fetch[Next|Prior|first|Last|Absolute{n}|Relative{n}] from cursor_name [Into @变量名][,……]
+-- 4. 关闭游标 Close cursor_name
+-- 5. 释放游标 DealLocate cursor_name
+
+-- 例
+declare cur_student cursor Keyset For	-- 1. 声明游标
+Select StudentID, StudentName, Sex from Studen
+Declare @StudenID char(12), @StudentName char(6), @Sex char(2)
+Open cur_student	-- 2. 打开游标
+if @@ERROR = 0
+begin
+	if (@@Cursor_rows > 0)	-- 判断游标是否有记录
+	begin
+		print '有' + Cast(@@Cursor_rows as varchar) + ' 条记录'
+		fetch cur_student into @StudentID, @StudentName, @Sex	-- 将第一条记录存入变量
+		while(@@FETCH_STATUS =0)
+		begin
+			print @StudentID + ' '+ @StudentName + ' ' + @Sex	-- 打印记录
+			fetch cur_student into @StudentID, @StudentName, @Sex -- 下一条记录
+		end
+	end
+end
+else
+	print '游标打开失败！'
+Close cur_student;
+DealLocate cur_student;
+end
+```
+
+☆ 通常在 `T-SQL` 程序中使用
+
+## 8. 存储过程
+
+存储过程是一种数据库对象，是一个 `T-SQL` 语句的集合，它将一些固定的操作集中起来交给 `SQL Server` 数据库服务器完成，以实现某个任务
+
+### 8.1 存储过程的特点
+
++ 接收输入参数并以输出参数的形式将多个值返回至调用过程或批处理
++ 在服务器端运行，使用 `Execute(Exec)` 执行
++ 可以调用其他存储过程，也可以被其他语句或存储过程调用，但不能直接在表达式中使用
++ 具有返回状态值，表明被调用成功还是失败，但不反悔取代其名称的值
++ 存储过程已在服务器注册
+
+### 8.2 存储过程的分类
+
+系统存储过程
+
+> 系统存储过程以 `sp_` 为前缀，主要用来从系统表中获取信息，为系统管理员管理 `SQL Server` 提供帮助，方便用户查看数据库对象。如 `sp_password` 用来添加或更改 `Microsoft SQL Server` 登录的密码
+
+用户自定义存储过程
+
+> 根据用户需要自定义的存储过程，为完成某一特定功能的可重用 `T-SQL` 语句集，是在用户数据库中创建的存储过程。
+
+扩展存储过程
+
+> 扩展存储过程时 `SQL Server` 的实例可以动态加载和运行的动态链接库(`DLL`)。通过扩展存储过程，可以使用其他编程语言创建自己的外部程序，实现 `Transact-SQL` 程序与其他语言程序的连接与融合
+
+### 8.3 存储过程的优点
+
+使用存储过程与`T-SQL` 语句集相比
+
++ 有利于模块化程序设计
++ 执行速度快
++ 减少网络通信流量
++ 保证系统的安全性
+
+### 8.4 存储过程的使用
+
+#### 8.4.1 创建和执行存储过程
+
+```sql
+-- 创建存储过程
+CREATE PROCEDURE 存储过程名称
+[{@参数名 参数数据类型} [VARYING][=default][Output]][,……n]
+[WITH {Recompile|encyption|recompile,encryption}]
+[For Replication]
+As
+T-SQL 语句
+
+-- VARYING 作为输出参数支持的结果集，仅适用于游标参数
+-- default 参数的默认值。如果定义了默认值，则无需指定该参数的值即可执行
+-- output 表明参数时返回参数
+-- Recompile 声明该过程在运行时重新编译，不用缓存此过程的计划
+-- encyption 指明 SQL Server 将加密 Syscomments 表中该Greate Procedure语句文本的条目
+-- For Replication 指定不能再订阅服务器上执行复制创建的存储过程。不能与with Recompile一起使用
+```
+
+```sql
+-- 例 创建一个存储过程，输入一个姓氏返回指定姓氏的学生姓名、出生日期、家庭住址
+Create Procedure up_showStuInfo
+@name varchar(4)='张'
+as
+select StudentName, Birth, Addr from Student
+where StudentName Like @name+'%'
+
+-- 例 统计全体学生人数，并将统计结果用输出参数返回
+Create procedure up_stuTotal
+@total int output
+as
+select @total=count(*) from Student
+```
+
+```sql
+-- 执行存储过程
+execute up_name
+
+-- 执行上述创建的存储过程 up_showStuInfo
+exec up_showStuInfo	-- 不传入参数时，使用默认值作为参数
+exec up_showStuInfo '刘'	-- 给参数赋值
+
+-- 执行上述创建的存储过程 up_stuTotal
+-- 该存储过程有返回值，需要用变量来接收
+declare @result int;
+exec up_stuTotal @result output
+print @result;
+```
+
+
+
+#### 8.4.2 修改存储过程
+
+```sql
+-- 修改存储过程
+Alter PROCEDURE 存储过程名称
+[{@参数名 参数数据类型} [VARYING][=default][Output]][,……n]
+[WITH {Recompile|encyption|recompile,encryption}]
+[For Replication]
+As
+T-SQL 语句
+```
+
+
+
+#### 8.4.3 删除存储过程
+
+```sql
+-- 删除
+drop procedure up_name
+```
+
+
+
+## 9. 数据库设计
+
+数据库是长期存储在计算机内的、有组织的、可共享的数据集合。数据库设计就是根据选择的数据库管理系统和用户需求对一个单位或部门的数据进行重新组织和构造的过程。数据库实施则是将数据按照数据库设计中规定的数据组织形式将数据存入数据库的过程。
+
+下图是数据库系统生存期，其中从需求分析到物理结构设计属于数据库设计时期
+
+```mermaid
+graph TB
+A[数 据 库 规 划] --> |可行性分析报告| B[需求分析]
+B --> |需求分析说明书| C[概念结构设计]
+C --> |概念结构设计说明书| D[逻辑结构设计]
+D --> |逻辑结构设计说明书| E[物理结构设计]
+E --> |物理结构设计说明书| F[数据库实施]
+F --> |数据库| G[数据库运行与维护]
+```
+
+### 9.1 数据规划时期
+
+对于大型数据库系统是非常必要的时期。数据库规划的好坏不仅直接关系到整个数据库系统的成败，而且对一个企业或部门的信息化建设进程都将产生深远的影响。
+
+数据库规划时期应该完成的主要工作是确定数据库系统在企业或部门的计算机系统中的地位以及各个数据库之间的联系，从而对建立数据库的必要性和可行性进行分析。
+
+该时期的产物是可行性分析报告。
+
+### 9.2 数据库设计时期
+
+#### 9.2.1 需求分析
+
+需求分析是数据库设计过程中比较费时、复杂和困难的一步，也是最重要的一步。
+
+需求分析的主要任务是利用数据库设计理论和方法对显示世界的对象进行详细调查，收集支持系统目标的基础数据及其处理需求
+
++ 信息需求
++ 处理需求
++ 安全性和完整性方面的需求
+
+**需求分析的步骤**
+
+1. 需求调查
+2. 分析整理
+3. 评审
+
+**数据字典**
+
+数据字典为设计人员提供了关于数据详细描述信息
+
+> 数据字典的内容
+>
+> + 数据项
+> + 数据结构
+> + 数据流
+> + 数据存储
+> + 处理过程
+>
+> ---
+>
+> 数据字典的特点
+>
+> + 通过名字能方便地查询数据的定义
+> + 没有数据冗余
+> + 容易更新和更改
+> + 定义的书写方式简单方便，且严格
+
+该阶段的产物是需求分析说明书
+
+#### 9.2.2 概念结构设计
+
+它是在需求分析的基础上，通过对用户需求进行分析、归纳、抽象，形成一个独立于具体`DBMS` 和计算机硬件结构的整体概念结构，即概念模式。概念模式应该完全表达用户的需求，一般用 `E-R` 图表示
+
+> 基本方法分类
+>
+> 1. 集中式设计法
+> 2. 分散-集成设计法
+>
+> ---
+>
+> 基本设计策略
+>
+> + 自上而下
+> + 自下而上
+> + 由内向外
+> + 混合策略
+>
+> ---
+>
+> 设计步骤
+>
+> 1. 设计局部 `E-R` 模式
+>
+> 1. 合并局部 `E-R` 模式
+> 2. 优化全局 `E-R` 模式
+
+该阶段的产物是概念结构设计说明书
+
+#### 9.2.3 逻辑结构设计
+
+该阶段是在概念结构设计的基础上，在一定的原则指导下将 `E-R` 图转换为某个具体 `DBMS` 支持的数据模型相符合的、经过优化的逻辑结构
+
+> `E-R` 模式到关系模式的转换
+>
+> 1. 实体型的转换
+> 2. 联系的转换
+>
+> ---
+>
+> 关系模式的优化
+>
+> 1. 规范化处理
+>    1. 确定规范级别
+>    2. 实施规范化分解
+> 2. 模式的评价与修正
+>    1. 模式评价
+>       1. 功能评价
+>       2. 性能评价
+>    2. 模式修正
+>       1. 减少连接运算
+>       2. 减小关系的大小和数据量
+>       3. 使用快照技术
+
+该阶段的产物是逻辑结构设计说明书
+
+#### 9.2.4 物理结构设计
+
+该阶段是为逻辑数据结构选取一个最适合应用环境的物理结构，包括存储结构和存取方法等
+
+> 聚簇设计
+>
+> + 当对一个关系的某些属性列的访问时该关系的主要应用，而对其他属性的访问很少或是次要应用时，可以考虑对该关系在这些属性列上建立聚簇
+> + 如果一个关系在某些属性列上的值重复率很高，则可以考虑对该关系在这些组属性列上建立聚簇
+> + 如果一个关系一旦装入数据，某些属性列的值很少修改，也很少增加或删除元组，则考虑对该关系在这些属性列上建立聚簇
+>
+> ---
+>
+> 索引设计
+>
+> + 在主键属性列和外键属性列上通常都可以分别建立索引，不仅有助于唯一性检查和完整性检查，而且可以加快连接查询的速度
+> + 以查询为主的关系可建立尽可能多的索引
+> + 对等值连接，但满足条件的元组较少的查询可考虑建立索引
+> + 如果查询可以从索引直接得到结果而不必访问关系，则可以建立索引
+>
+> ---
+>
+> 分区设计
+>
+> + 减少访问冲突，提高 `I/O` 并行性
+> + 分散热点数据，均衡 `I/O` 负担
+> + 保证关键数据快速访问
+
+该阶段的产物是物理结构设计说明书
+
+### 9.3 数据库实施与维护时期
+
+#### 9.3.1 数据库的建立与调整
+
+**数据库的建立**
+
++ 数据库模式的建立
++ 数据加载
+
+**数据库的调整**
+
++ 修改或调整关系模式与视图，使之更能适应用户的需要
++ 修改或调整索引与聚簇，是数据库性能与效率更佳
++ 修改或调整磁盘分区、调整数据库缓冲区大小以及调整并发度，使数据库物理性能更好
+
+**编制与调试**
+
+数据库应用程序的设计本质上是应用软件的设计，软件工程的方法完全适用。在调试应用程序时，数据入库工作尚未完成，可先使用模拟数据
+
+#### 9.3.2 数据库的试运行
+
+数据库的试运行也成为联合调试
+
++ `功能测试` 实际运行应用程序执行对数据库的各种操作，测试应用程序的各种功能
++ `性能测试` 测量系统的性能指标
+
+#### 9.3.3 数据库系统的运行与维护
+
+数据库系统投入正式运行，主要有以下几个工作
+
++ `数据库的转储和恢复` 定期对数据库和日志文件进行备份，以保证数据库中数据在遭到破坏后能进行恢复
++ `维持数据库的完整性与安全性` 
++ + 通过权限管理、口令、跟踪及审计等 `RDBMS` 的功能保证数据库安全
+  + 通过行政手段，建立一定规章制度以确保数据库的安全
+  + 数据库应备有多个副本并保存在不同的安全地点
+  + 应采取有效的措施防止病毒入侵，当出现病毒后应及时消毒
+
++ `检测并改善数据库性能` 对检测数据进行分析，找出改进系统性能的方法，并在数据库出现错误、故障或产生不适应情况时能够随时采取有效措施保护数据库
++ `数据库的重组和重构` 数据库在经过一定时间运行后，其性能会逐步下降，原因是频繁的增删改查操作造成的。因为不断的删除会造成磁盘内碎块的增多。因此必须对数据库进行重组，即按照原先的设计要求重新安排数据的存储位置，调整磁盘分区方法和存储空间，整理回收碎块等。
+
+### 9.4 数据库设计的特点
+
+数据库设计的基本任务是根据用户的信息需求、处理需求和数据库的支持环境设计出数据库模式及其典型的应用程序
+
++ `反复性` 数据库设计需要反复修改，逐步完善
++ `试探性` 设计过程往往是试探性的过程，最终的结果取决于数据库设计者的权衡和决策
++ `多步性` 数据库的设计常常由不同的人员分阶段进行
++ `面向数据` 数据库设计中实施以信息需求为主，兼顾处理需求的设计策略
+
+## 10. 数据库优化
+
+数据库优化有四大方法，按优化效果依次减弱是架构优化、硬件优化、数据库设计优化以及 `SQL` 优化。
+
+### 10.1 架构优化
+
+在高并发的场景下对架构层进行优化其效果最为明显，常见的优化手段有：分布式缓存，读写分离，分库分表等，每种优化手段又适用于不同的应用场景
+
+**分布式缓存**
+
+性能不够，缓存来凑。当需要在架构层进行优化时我们第一时间就会想到缓存这个神器，在应用与数据库之间增加一个缓存服务。当接收到查询请求后，我们先查询缓存，判断缓存中是否有数据，有数据就直接返回给应用，如若没有再查询数据库，并加载到缓存中，这样就大大减少了对数据库的访问次数。
+
+**读写分离**
+
+一主多从，读写分离，主动同步。当应用是读多写少，数据库扛不住读压力的时候，采用读写分离，通过增加从库数量可以线性提升系统读性能。
+
+主库，提供数据库写服务；从库，提供数据库读能力；
+
+☆ 当准备实施读写分离时，为了保证高可用，需要实现故障的自动转移，主从架构会有潜在主从不一致性问题
+
+### 10.2 硬件优化
+
+不管是读操作还是写操作，最终都是要访问磁盘，所以说磁盘的性能决定了数据库的性能。一块`PCIE` 固态硬盘的性能是普通机械硬盘的几十倍不止。这里我们可以从吞吐率、`IOPS` 两个维度看一下机械硬盘、普通固态硬盘、`PCIE` 固态硬盘之间的性能指标。性能更好的硬盘价格会更贵，在资金充足并且迫切需要提升数据库性能时，可以选择更换数据库的硬盘。
+
+### 10.3 数据库设计优化
+
+**选取最合适的字段属性**
+
+关系型数据库可以支持大数据量的存取，但是一般来说表越小，它执行的速度也就会越快。因此，在新建表的时候，在满足我们业务需求的基础上，尽可能的将字段的宽度设置的小一点。
+
+> 在定义邮政编码这个字段时，如果将其设置为 `CHAR(100)`，显然给数据库增加了不必要的空间，甚至使用 `VARCHAR` 这种类型也是多余的，因为 `CHAR(6)` 就可以很好的完成任务了。相同的，如果 `TINYINT` 能满足我们的业务需求，那我们没有必要使用 `INT` 或者 `BIGINT`
+
+**数据库索引**
+
+索引是提高数据库性能最常用的方法，它可以大大提高数据库查询的效率，尤其是在查询语句当中包含有`MAX()`，`MIN()` 和`ORDER BY` 这些函数和语句的时候，性能提高更为明显。
+
+通常情况，索引应建立在那些将用于 `JOIN` 连接，`WHERE` 判断和 `ORDER BY` 排序的字段上。尽量不要对数据库中某个含有大量重复的值的字段建立索引。
+
+> 如用户表中的性别字段就不适合创建索引（因为性别只有男或女两个值），在这样的字段上创建索引不仅不会提高数据库查询的效率，反而有可能降低数据库的性能。
+
+索引并不是越多越好，索引固然可以提高相应的 `SELECT` 的效率，但同时也降低了 `INSERT` 及 `UPDATE`  的效率，因为 `INSERT` 或`UPDATE ` 时有会更新索引。建立索引视具体情况而定。一个表的索引数最好不要超过6个，若太多则应考虑一些不常使用到的列上建的索引是否有必要
+
+### 10.4 `SQL` 语句优化
+
+**尽量避免使用子查询，可以使用 JOIN 链接查询替代**
+
+> 常用的关系型数据库都支持子查询，子查询使用 `SELECT` 语句创建一个查询结果，然后把这个结果作为一张临时表用在另一个查询中。使用子查询可以一次完成多步 `SQL`操作，也可以避免事务或者表锁死，且写起来比较容易。但是使用子查询会在内存中创建一张临时表供外层查询使用，所以会降低查询的效率。这时候可以使用 `JOIN` 链接操作来替代子查询
+>
+> ---
+
+**UNION All能满足业务需求不要使用UNION**
+
+> 如果需要将两个或者多个 `SELECT` 语句的结果作为合并为一个整体显示出来，可以用 `UNION` 或者 `UNION ALL` 关键字。`UNION`(联合)和 `UNION ALL` 的作用是将多个结果合并在一起显示出来。
+>
+> `UNION` 会自动压缩多个结果集合中的重复结果，而 `UNION ALL`  则将所有的结果全部显示出来，不管是不是重复。所以当 `UNION ALL` 能满足业务需求的时候，尽量使用 `UNION ALL` 而不用 `UNION`
+>
+> ---
+
+**WHERE子句尽量避免使用 != 或 < > 操作符**
+
+> ---
+
+**WHERE子句使用OR的优化**
+
+> 通常情况可以使用 ` UNION ALL` 或 `UNION` 的方式替换 `OR` 会得到更好的效果。因为 `WHERE` 子句中使用了 `OR，`将不会使用索引
+>
+> ```sql
+> 例如:SELECT ID FROM TABLENAME WHERE ID = 1 OR ID = 2 ;
+> 优化:SELECT ID FROM TABLENAME WHERE ID = 1 UNION ALL SELECT ID FROM TABLENAME WHERE ID = 2 ;
+> ```
+>
+> ---
+
+**WHERE子句使用IN或NOT IN优化**
+
+> `IN `和 `NOT IN`也要慎用，否则可能会导致全表扫描
+>
+> ```sql
+> 方案一:BETWEEN AND替换IN
+> 例如:SELECT ID FROM TABLENAME WHERE ID IN(1,2,3);
+> 优化:SELECT ID FROM TABLENAME WHERE ID BETWEEN 1 AND 3;
+> 
+> 方案二:EXISTS替换IN
+> 例如:SELECT ID FROM TABLEA WHERE ID IN (SELECT ID FROM TABLEB ) 
+> 优化:SELECT ID FROM TABLEA AS A WHERE ID EXISTS(SELECT 1 FROM TABLEB AS A WHERE B.ID = A.ID)
+> 
+> 方案三:LEFT JOIN替换IN
+> 例如:SELECT ID FROM TABLEA WHERE ID IN(SELECT ID FROM TABLEB) 
+> 优化:SELECT ID FROM TABLEA AS A LEFT JOIN TABLEB AS B ON A.ID = B.ID
+> ```
+>
+> ---
+
+**WHERE子句中使用IS NULL或IS NOT NULL优化**
+
+> 在 `WHERE` 子句中使用 `IS NULL` 或 `IS NOT NULL` 判断,索引将被放弃使用，会进行全表查询
+>
+> ```sql
+> 例如:SELECT ID FROM TABLENAME WHERE AGE IS NULL 
+> 优化成AGE上设置默认值0，确保表中AGE没有NULL值，
+> 优化：SELECT ID FROM TABLENAME WHERE AGE = 0
+> ```
+>
+> ---
+
+**LIKE语句优化**
+
+> 一般情况下不建议使用LIKE操作，特别是数据量较大的表
+>
+> ```sql
+> 例如:SELECT NAME FROM TABLEA WHERE NAME LIKE '%张%';	-- 不会使用索引
+> 优化:SELECT NAME FROM TABLEA WHERE NAME LIKE '张%';	-- 会使用索引
+> ```
+>
+> ---
+
+**WHERE子句中避免对字段进行表达式操作**
+
+> 尽量不要在 `WHERE` 子句中的 `=` 左边进行函数、算数运算或其他表达式运算，否则系统将无法正确使用索引
+>
+> ```sql
+> 例如:SELECT ID FROM TABLENAME WHERE ID/2 = 50 
+> 优化:SELECT ID FROM TABLENAME WHERE ID = 50*2
+> 
+> 例如:SELECT ID FROM TABLENAME WHERE substring(name,1,2) = '欧阳' 
+> 优化:SELECT ID FROM TABLENAME WHERE LIKE '欧阳%'
+> ```
+>
+> ---
+
+**一定不要用SELECT \* FROM TABLENAME**
+
+> 在定义 `SQL` 语句字段列表替换 "*"，尽量避免返回无用的时候，要用具体的的字段
+>
+> ---
+
+**EXISTS代替IN**
+
+## 11. 主从备份（发布订阅）
+
+`SQL Server` 支持主从的高可用，进一步提高数据的安全性和业务的高可用
+
+通过将主库上的日志传输到备用实例上，从而达到主备库数据的一致性
+
+> **优点**
+>
+> 可以为一个主库添加多个备库，从而提高数据灾难性恢复的解决方法
+>
+> 与其他数据库主从一样，从库可以提高只读访问(在还原数据期间)
+>
+> 可以自定义数据延迟应用时间。这样好处就是如果主库错误修改了数据，而从库还没有应用修改的数据，那么就可以通过从库来把错误环境的数据还原回来
+>
+> ---
+
+### 11.1 发布
+
+需要打开`SQL Server Configuration Manager`，启动 `SQL Server代理`
+
+`SSMS` 连接成功后，打开 `复制` ，有 `本地发布` 以及 `本地订阅`，可直接鼠标右键进行新建发布。
+
+1. 选择需要发布的数据库
+2. 选择发布类型
+   + **快照发布:**
+     发布服务器按预定的时间间隔向订阅服务器发送已发布数据的快照。
+   + 事务发布:
+     在订阅服务器收到已发布数据的初始快照后，发布服务器将事务流式传输到订阅服务器。
+   + **对等发布:**
+     对等发布支持多主复制。发布服务器将事务流式传输到拓扑中的所有对等方。所有对等节点可以读取和写入更改，且所有更改将传播到拓扑中的所有节点。
+   + **合并发布:**
+     在订阅服务器收到已发布数据的初始快照后，发布服务器和订阅服务器可以独立更新已发布数据。更改会定期合并。`Microsoft SQL Server Compact Edition` 只能订阅合并发布。
+3. 选择要发布的表和其他对象。如数据表(一个或多个)、存储过程等
+4. 可以选择立即创建快照并保持可用状态，或者自定义一个时间
+5. 设置快照安全代理
+6. 创建发布即可
+
+### 11.2 订阅
+
+在订阅目标数据库前，需要准备一个数据库接收
+
+1. 选择以发布的数据进行订阅
+2. 推送订阅与请求订阅可根据项目需求进行选择
+3. 选择订阅的数据库(用于接收发布的数据库)
+4. 设置分发代理安全性
+5. 设置代理计划，可自定义
+6. 完成订阅即可
+
+# End
+
+数据库的高级内容到这里已经算是完结了。根据日后的学习情况可能还会再有部分知识点的补充。
+
+> The advanced content of the database is now considered complete. Based on future learning situations, there may be additional knowledge points to be supplemented.
+
+如果感觉这篇文档对你数据库的进阶起到帮助，不妨给作者点个星，让更多的人学到知识，也可以给作者一点鼓励。
+
+> If you feel that this document is helpful for advancing your database, you may want to give the author a star to help more people learn knowledge, and also give the author some encouragement.
+
+<img src="./Images Database/zhifubao.jpg" alt="支付宝" style="zoom:30%;" /> <img src="./Images Database/wechat.jpg" alt="微信" style="zoom:30%;" />
+
+
+
